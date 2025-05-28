@@ -236,16 +236,26 @@ const Index = () => {
         </button>
       </header>
 
-      {/* Challenge target display - Centré et toujours visible */}
+      {/* Messages area */}
+      <div className="flex-1 p-4 overflow-y-auto relative z-10">
+        <div className="space-y-3">
+          {messages.map((message) => (
+            <MessageBubble key={message.id} message={message} />
+          ))}
+          <div ref={messagesEndRef} />
+        </div>
+      </div>
+
+      {/* Challenge target display - Positionné juste au-dessus de la zone de saisie */}
       {mode === 'challenge' && selectedChallenge && (
-        <div className="bg-white/95 backdrop-blur-sm border-b-2 border-blue-200 relative z-10 sticky top-0">
-          <div className="max-w-2xl mx-auto p-4">
+        <div className="bg-white/95 backdrop-blur-sm border-t-2 border-blue-200 relative z-10">
+          <div className="max-w-2xl mx-auto p-3">
             <div className="text-center">
-              <p className="text-sm text-gray-600 mb-2">🎯 Texte cible :</p>
-              <p className="text-lg font-medium text-gray-800 bg-blue-50 p-3 rounded-lg border-2 border-blue-200">
+              <p className="text-xs text-gray-600 mb-1">🎯 Texte cible :</p>
+              <p className="text-base font-medium text-gray-800 bg-blue-50 p-2 rounded-lg border-2 border-blue-200">
                 {selectedChallenge.text}
               </p>
-              <div className="flex justify-center items-center space-x-4 mt-3 text-sm text-gray-600">
+              <div className="flex justify-center items-center space-x-4 mt-2 text-xs text-gray-600">
                 <span>⏱️ Temps max: {selectedChallenge.maxTime}s</span>
                 {isTyping && (
                   <span className="font-mono bg-blue-100 px-2 py-1 rounded">
@@ -257,16 +267,6 @@ const Index = () => {
           </div>
         </div>
       )}
-
-      {/* Messages area */}
-      <div className="flex-1 p-4 overflow-y-auto relative z-10">
-        <div className="space-y-3">
-          {messages.map((message) => (
-            <MessageBubble key={message.id} message={message} />
-          ))}
-          <div ref={messagesEndRef} />
-        </div>
-      </div>
 
       {/* Input area - No white background, extends to edges */}
       <div className="p-4 relative z-10">
