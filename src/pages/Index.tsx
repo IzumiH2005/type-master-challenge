@@ -145,7 +145,7 @@ const Index = () => {
     backgroundPosition: 'center',
     backgroundRepeat: 'no-repeat'
   } : {
-    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+    background: 'linear-gradient(135deg, #4c63d2 0%, #7c3aed 100%)'
   };
 
   return (
@@ -153,33 +153,33 @@ const Index = () => {
       {/* Background overlay for better readability */}
       <div className="absolute inset-0 bg-black/20 z-0"></div>
       
-      {/* Header */}
-      <header className="bg-emerald-600 text-white p-4 flex items-center justify-between shadow-lg relative z-10">
+      {/* Header - Reduced size */}
+      <header className="bg-blue-600 text-white p-3 flex items-center justify-between shadow-lg relative z-10">
         <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 bg-emerald-500 rounded-full flex items-center justify-center text-xl">
+          <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-lg">
             🎭
           </div>
           <div>
-            <h1 className="text-lg font-semibold">🎭CDS-TypeMaster🎭</h1>
-            <p className="text-sm text-emerald-100">
+            <h1 className="text-base font-semibold">🎭CDS-TypeMaster🎭</h1>
+            <p className="text-xs text-blue-100">
               {mode === 'challenge' ? `Challenge: ${selectedChallenge?.name}` : 'Mode Libre'}
             </p>
           </div>
         </div>
         <button 
           onClick={() => setShowMenu(!showMenu)}
-          className="p-2 hover:bg-emerald-700 rounded-full transition-colors"
+          className="p-2 hover:bg-blue-700 rounded-full transition-colors"
         >
-          <Menu size={20} />
+          <Menu size={18} />
         </button>
       </header>
 
       {/* Challenge target display */}
       {mode === 'challenge' && selectedChallenge && (
-        <div className="bg-gray-100 p-4 border-b relative z-10">
-          <div className="bg-white rounded-lg p-3 shadow-sm">
+        <div className="bg-gray-100/90 backdrop-blur-sm p-3 border-b relative z-10">
+          <div className="bg-white/95 backdrop-blur-sm rounded-lg p-3 shadow-sm">
             <p className="text-sm text-gray-600 mb-1">Texte cible:</p>
-            <p className="font-medium">{selectedChallenge.text}</p>
+            <p className="font-medium text-sm">{selectedChallenge.text}</p>
             <p className="text-xs text-gray-500 mt-1">
               Temps maximum: {selectedChallenge.maxTime}s
             </p>
@@ -197,8 +197,8 @@ const Index = () => {
         </div>
       </div>
 
-      {/* Input area */}
-      <div className="bg-gray-100 p-4 relative z-10">
+      {/* Input area - No white background, extends to edges */}
+      <div className="p-4 relative z-10">
         <div className="flex items-end space-x-3">
           <div className="flex-1 relative">
             <input
@@ -208,11 +208,11 @@ const Index = () => {
               onChange={handleInputChange}
               onKeyPress={handleKeyPress}
               placeholder="Tapez votre message..."
-              className="w-full px-4 py-3 rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+              className="w-full px-4 py-3 rounded-full border border-white/30 bg-white/10 backdrop-blur-sm text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-white/40 focus:border-transparent"
               autoFocus
             />
             {isTyping && startTime && (
-              <div className="absolute -top-8 left-4 text-xs text-gray-600 bg-white px-2 py-1 rounded shadow">
+              <div className="absolute -top-8 left-4 text-xs text-white bg-black/40 backdrop-blur-sm px-2 py-1 rounded shadow">
                 Temps: {((Date.now() - startTime.getTime()) / 1000).toFixed(1)}s
               </div>
             )}
@@ -220,7 +220,7 @@ const Index = () => {
           <button
             onClick={handleSend}
             disabled={!currentText.trim()}
-            className="bg-emerald-500 text-white p-3 rounded-full hover:bg-emerald-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+            className="bg-blue-500 text-white p-3 rounded-full hover:bg-blue-600 disabled:bg-gray-500/50 disabled:cursor-not-allowed transition-colors backdrop-blur-sm"
           >
             <Send size={20} />
           </button>

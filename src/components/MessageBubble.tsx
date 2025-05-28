@@ -35,13 +35,13 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
   return (
     <div className="flex justify-end animate-fade-in">
       <div className="max-w-xs lg:max-w-md">
-        <div className="bg-emerald-500 text-white rounded-lg rounded-br-sm p-3 shadow-md">
+        <div className="bg-blue-500 text-white rounded-lg rounded-br-sm p-3 shadow-md backdrop-blur-sm">
           <p className="break-words">{message.text}</p>
           
           {/* Stats section */}
           {message.duration && (
-            <div className="mt-2 pt-2 border-t border-emerald-400/30">
-              <div className="text-xs text-emerald-100 space-y-1">
+            <div className="mt-2 pt-2 border-t border-blue-400/30">
+              <div className="text-xs text-blue-100 space-y-1">
                 <div className="flex justify-between">
                   <span>Durée:</span>
                   <span className="font-mono">{formatDuration(message.duration)}</span>
@@ -70,10 +70,10 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
           
           {/* Timestamp and status */}
           <div className="flex items-center justify-end mt-2 space-x-1">
-            <span className="text-xs text-emerald-100">
+            <span className="text-xs text-blue-100">
               {formatTime(message.timestamp)}
             </span>
-            <CheckCheck size={16} className="text-emerald-200" />
+            <CheckCheck size={16} className="text-blue-200" />
           </div>
         </div>
       </div>
