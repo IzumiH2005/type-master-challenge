@@ -30,7 +30,7 @@ const ChallengeMenu: React.FC<ChallengeMenuProps> = ({
   const [newChallenge, setNewChallenge] = useState({
     name: '',
     text: '',
-    maxTime: 10
+    maxTime: 1.0
   });
 
   const handleCreateChallenge = () => {
@@ -47,7 +47,7 @@ const ChallengeMenu: React.FC<ChallengeMenuProps> = ({
     setChallenges(updatedChallenges);
     localStorage.setItem('typemaster-challenges', JSON.stringify(updatedChallenges));
     
-    setNewChallenge({ name: '', text: '', maxTime: 10 });
+    setNewChallenge({ name: '', text: '', maxTime: 1.0 });
     setShowCreateForm(false);
   };
 
@@ -125,11 +125,19 @@ const ChallengeMenu: React.FC<ChallengeMenuProps> = ({
                   <input
                     type="number"
                     min="0.1"
-                    step="0.1"
+                    max="999"
+                    step="0.01"
                     value={newChallenge.maxTime}
-                    onChange={(e) => setNewChallenge(prev => ({ ...prev, maxTime: parseFloat(e.target.value) || 10 }))}
-                    className="w-20 p-1 border border-gray-300 rounded focus:ring-2 focus:ring-emerald-500"
+                    onChange={(e) => {
+                      const value = parseFloat(e.target.value);
+                      if (!isNaN(value) && value >= 0.1) {
+                        setNewChallenge(prev => ({ ...prev, maxTime: value }));
+                      }
+                    }}
+                    className="w-24 p-1 border border-gray-300 rounded focus:ring-2 focus:ring-emerald-500"
+                    placeholder="0.24"
                   />
+                  <span className="text-xs text-gray-500">min: 0.1s</span>
                 </div>
                 <button
                   onClick={handleCreateChallenge}

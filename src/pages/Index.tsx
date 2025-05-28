@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Menu, Send, Mic } from 'lucide-react';
 import MessageBubble from '../components/MessageBubble';
@@ -25,11 +24,12 @@ const Index = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [currentText, setCurrentText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
-  const [startTime, setStartTime] = useState<Date | null>(null);
+  const [startTime, setStartTime] = useState<number | null>(null);
   const [mode, setMode] = useState<'free' | 'challenge'>('free');
   const [selectedChallenge, setSelectedChallenge] = useState<Challenge | null>(null);
   const [showMenu, setShowMenu] = useState(false);
   const [showBackgroundSelector, setShowBackgroundSelector] = useState(false);
+  const [currentTime, setCurrentTime] = useState<number>(0);
   const [challenges, setChallenges] = useState<Challenge[]>([
     { id: 1, name: "Quick Words", text: "The quick brown fox jumps over the lazy dog", maxTime: 10 },
     { id: 2, name: "Speed Test", text: "Programming is the art of telling another human what one wants the computer to do", maxTime: 15 },
@@ -38,6 +38,7 @@ const Index = () => {
   
   const inputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     // Load saved data from localStorage
@@ -57,65 +58,126 @@ const Index = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  useEffect(() => {
+    // Gestion du timer en mode challenge
+    if (mode === 'challenge' && selectedChallenge && isTyping && startTime) {
+      timerRef.current = setInterval(() => {
+        const elapsed = (performance.now() - startTime) / 1000;
+        setCurrentTime(elapsed);
+        
+        // Vérifier si le temps est écoulé
+        if (elapsed >= selectedChallenge.maxTime) {
+          handleTimeUp();
+        }
+      }, 10); // Mise à jour toutes les 10ms pour plus de précision
+      
+      return () => {
+        if (timerRef.current) {
+          clearInterval(timerRef.current);
+        }
+      };
+    }
+  }, [isTyping, startTime, mode, selectedChallenge]);
+
+  const handleTimeUp = () => {
+    if (!selectedChallenge || !startTime) return;
+    
+    const accuracy = calculateAccuracy(currentText, selectedChallenge.text);
+    
+    const newMessage: Message = {
+      id: Date.now(),
+      text: currentText || '(temps écoulé)',
+      timestamp: new Date(),
+      duration: selectedChallenge.maxTime,
+      accuracy,
+      status: 'failed'
+    };
+    
+    setMessages(prev => [...prev, newMessage]);
+    resetTypingState();
+  };
+
+  const resetTypingState = () => {
+    setCurrentText('');
+    setIsTyping(false);
+    setStartTime(null);
+    setCurrentTime(0);
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+    }
+    if (inputRef.current) {
+      inputRef.current.focus();
+    }
+  };
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setCurrentText(value);
     
     if (!isTyping && value.length > 0) {
       setIsTyping(true);
-      setStartTime(new Date());
+      setStartTime(performance.now()); // Utilisation de performance.now() pour plus de précision
     }
   };
 
   const calculateAccuracy = (typed: string, target: string): number => {
+    if (target.length === 0) return 1;
+    
     const minLength = Math.min(typed.length, target.length);
     let errors = 0;
     
+    // Comparer caractère par caractère
     for (let i = 0; i < minLength; i++) {
       if (typed[i] !== target[i]) {
         errors++;
       }
     }
     
-    // Add errors for missing or extra characters
+    // Ajouter les caractères manquants ou en trop comme erreurs
     errors += Math.abs(typed.length - target.length);
     
-    return Math.max(0, 1 - (errors / target.length));
+    // Calculer la précision
+    const accuracy = Math.max(0, 1 - (errors / target.length));
+    console.log('Calcul précision:', { typed, target, errors, accuracy });
+    return accuracy;
   };
 
   const handleSend = () => {
     if (!currentText.trim() || !startTime) return;
     
-    const endTime = new Date();
-    const duration = (endTime.getTime() - startTime.getTime()) / 1000;
+    const endTime = performance.now();
+    const duration = (endTime - startTime) / 1000;
     
     let accuracy: number | undefined;
     let status: 'success' | 'failed' | undefined;
     
     if (mode === 'challenge' && selectedChallenge) {
-      accuracy = calculateAccuracy(currentText, selectedChallenge.text);
+      accuracy = calculateAccuracy(currentText.trim(), selectedChallenge.text);
       const timeSuccess = duration <= selectedChallenge.maxTime;
       const textMatch = currentText.trim() === selectedChallenge.text;
       status = timeSuccess && textMatch ? 'success' : 'failed';
+      
+      console.log('Challenge résultat:', { 
+        timeSuccess, 
+        textMatch, 
+        duration, 
+        maxTime: selectedChallenge.maxTime,
+        accuracy,
+        status 
+      });
     }
     
     const newMessage: Message = {
       id: Date.now(),
       text: currentText,
-      timestamp: endTime,
+      timestamp: new Date(),
       duration,
       accuracy,
       status
     };
     
     setMessages(prev => [...prev, newMessage]);
-    setCurrentText('');
-    setIsTyping(false);
-    setStartTime(null);
-    
-    if (inputRef.current) {
-      inputRef.current.focus();
-    }
+    resetTypingState();
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -174,15 +236,24 @@ const Index = () => {
         </button>
       </header>
 
-      {/* Challenge target display */}
+      {/* Challenge target display - Centré et toujours visible */}
       {mode === 'challenge' && selectedChallenge && (
-        <div className="bg-gray-100/90 backdrop-blur-sm p-3 border-b relative z-10">
-          <div className="bg-white/95 backdrop-blur-sm rounded-lg p-3 shadow-sm">
-            <p className="text-sm text-gray-600 mb-1">Texte cible:</p>
-            <p className="font-medium text-sm">{selectedChallenge.text}</p>
-            <p className="text-xs text-gray-500 mt-1">
-              Temps maximum: {selectedChallenge.maxTime}s
-            </p>
+        <div className="bg-white/95 backdrop-blur-sm border-b-2 border-blue-200 relative z-10 sticky top-0">
+          <div className="max-w-2xl mx-auto p-4">
+            <div className="text-center">
+              <p className="text-sm text-gray-600 mb-2">🎯 Texte cible :</p>
+              <p className="text-lg font-medium text-gray-800 bg-blue-50 p-3 rounded-lg border-2 border-blue-200">
+                {selectedChallenge.text}
+              </p>
+              <div className="flex justify-center items-center space-x-4 mt-3 text-sm text-gray-600">
+                <span>⏱️ Temps max: {selectedChallenge.maxTime}s</span>
+                {isTyping && (
+                  <span className="font-mono bg-blue-100 px-2 py-1 rounded">
+                    ⏰ {currentTime.toFixed(2)}s / {selectedChallenge.maxTime}s
+                  </span>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       )}
@@ -206,14 +277,19 @@ const Index = () => {
               type="text"
               value={currentText}
               onChange={handleInputChange}
-              onKeyPress={handleKeyPress}
+              onKeyPress={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSend();
+                }
+              }}
               placeholder="Tapez votre message..."
               className="w-full px-4 py-3 rounded-full border border-white/30 bg-white/10 backdrop-blur-sm text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-white/40 focus:border-transparent"
               autoFocus
             />
-            {isTyping && startTime && (
+            {isTyping && startTime && mode === 'free' && (
               <div className="absolute -top-8 left-4 text-xs text-white bg-black/40 backdrop-blur-sm px-2 py-1 rounded shadow">
-                Temps: {((Date.now() - startTime.getTime()) / 1000).toFixed(1)}s
+                Temps: {((performance.now() - startTime) / 1000).toFixed(2)}s
               </div>
             )}
           </div>
