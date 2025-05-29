@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Menu, Send, Mic } from 'lucide-react';
 import MessageBubble from '../components/MessageBubble';
@@ -116,30 +117,46 @@ const Index = () => {
     
     if (!isTyping && value.length > 0) {
       setIsTyping(true);
-      setStartTime(performance.now()); // Utilisation de performance.now() pour plus de précision
+      setStartTime(performance.now());
     }
   };
 
   const calculateAccuracy = (typed: string, target: string): number => {
     if (target.length === 0) return 1;
     
-    const minLength = Math.min(typed.length, target.length);
-    let errors = 0;
+    const typedTrimmed = typed.trim();
+    const targetTrimmed = target.trim();
     
-    // Comparer caractère par caractère
+    if (typedTrimmed.length === 0) return 0;
+    
+    // Calculer le nombre de caractères corrects depuis le début
+    let correctChars = 0;
+    const minLength = Math.min(typedTrimmed.length, targetTrimmed.length);
+    
     for (let i = 0; i < minLength; i++) {
-      if (typed[i] !== target[i]) {
-        errors++;
+      if (typedTrimmed[i] === targetTrimmed[i]) {
+        correctChars++;
+      } else {
+        // Arrêter au premier caractère incorrect pour une mesure plus précise
+        break;
       }
     }
     
-    // Ajouter les caractères manquants ou en trop comme erreurs
-    errors += Math.abs(typed.length - target.length);
+    // Si le texte tapé est plus long que prévu, pénaliser
+    if (typedTrimmed.length > targetTrimmed.length) {
+      correctChars = Math.max(0, correctChars - (typedTrimmed.length - targetTrimmed.length));
+    }
     
-    // Calculer la précision
-    const accuracy = Math.max(0, 1 - (errors / target.length));
-    console.log('Calcul précision:', { typed, target, errors, accuracy });
-    return accuracy;
+    const accuracy = correctChars / targetTrimmed.length;
+    console.log('Calcul précision amélioré:', { 
+      typed: typedTrimmed, 
+      target: targetTrimmed, 
+      correctChars, 
+      targetLength: targetTrimmed.length,
+      accuracy 
+    });
+    
+    return Math.max(0, Math.min(1, accuracy));
   };
 
   const handleSend = () => {
@@ -152,18 +169,29 @@ const Index = () => {
     let status: 'success' | 'failed' | undefined;
     
     if (mode === 'challenge' && selectedChallenge) {
-      accuracy = calculateAccuracy(currentText.trim(), selectedChallenge.text);
-      const timeSuccess = duration <= selectedChallenge.maxTime;
-      const textMatch = currentText.trim() === selectedChallenge.text;
-      status = timeSuccess && textMatch ? 'success' : 'failed';
+      const typedText = currentText.trim();
+      const targetText = selectedChallenge.text.trim();
       
-      console.log('Challenge résultat:', { 
+      accuracy = calculateAccuracy(typedText, targetText);
+      
+      // Critères de réussite plus précis
+      const timeSuccess = duration <= selectedChallenge.maxTime;
+      const textMatch = typedText === targetText;
+      const highAccuracy = accuracy >= 0.95; // 95% minimum de précision
+      
+      // Réussite si le temps est respecté ET (texte parfait OU très haute précision)
+      status = timeSuccess && (textMatch || highAccuracy) ? 'success' : 'failed';
+      
+      console.log('Challenge résultat détaillé:', { 
         timeSuccess, 
         textMatch, 
+        highAccuracy,
         duration, 
         maxTime: selectedChallenge.maxTime,
-        accuracy,
-        status 
+        accuracy: (accuracy * 100).toFixed(1) + '%',
+        status,
+        typedText,
+        targetText
       });
     }
     
@@ -258,7 +286,11 @@ const Index = () => {
               <div className="flex justify-center items-center space-x-4 mt-2 text-xs text-gray-600">
                 <span>⏱️ Temps max: {selectedChallenge.maxTime}s</span>
                 {isTyping && (
-                  <span className="font-mono bg-blue-100 px-2 py-1 rounded">
+                  <span className={`font-mono px-2 py-1 rounded ${
+                    currentTime > selectedChallenge.maxTime * 0.8 
+                      ? 'bg-red-100 text-red-700' 
+                      : 'bg-blue-100 text-blue-700'
+                  }`}>
                     ⏰ {currentTime.toFixed(2)}s / {selectedChallenge.maxTime}s
                   </span>
                 )}
